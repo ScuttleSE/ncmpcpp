@@ -50,6 +50,21 @@ CURLcode Curl::perform(std::string &data, const std::string &URL, const std::str
 	return result;
 }
 
+CURLcode Curl::post(std::string &data, const std::string &URL, const std::string &postfields, unsigned timeout)
+{
+	CURLcode result;
+	CURL *c = curl_easy_init();
+	curl_easy_setopt(c, CURLOPT_URL, URL.c_str());
+	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, write_data);
+	curl_easy_setopt(c, CURLOPT_WRITEDATA, &data);
+	curl_easy_setopt(c, CURLOPT_CONNECTTIMEOUT, timeout);
+	curl_easy_setopt(c, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(c, CURLOPT_POSTFIELDS, postfields.c_str());
+	result = curl_easy_perform(c);
+	curl_easy_cleanup(c);
+	return result;
+}
+
 std::string Curl::escape(const std::string &s)
 {
 	char *cs = curl_easy_escape(0, s.c_str(), s.length());

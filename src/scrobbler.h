@@ -18,21 +18,32 @@
  *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.              *
  ***************************************************************************/
 
-#ifndef NCMPCPP_CURL_HANDLE_H
-#define NCMPCPP_CURL_HANDLE_H
+#ifndef NCMPCPP_SCROBBLER_H
+#define NCMPCPP_SCROBBLER_H
 
-#include "config.h"
+#include "song.h"
 
-#include <string>
-#include "curl/curl.h"
+namespace Scrobbler {
 
-namespace Curl
-{
-	CURLcode perform(std::string &data, const std::string &URL, const std::string &referer = "", bool follow_redirect = false, unsigned timeout = 10);
+// Load or obtain a Last.fm session key.  Call once after MPD connects and
+// Config is populated.  No-op if lastfm_scrobble is disabled.
+void initialize();
 
-	CURLcode post(std::string &data, const std::string &URL, const std::string &postfields, unsigned timeout = 10);
+// Called on every song change.  Submits a scrobble for |prev| if its play
+// threshold was met, then sends an updateNowPlaying notification for |next|.
+// |prev_start_time| is the unix timestamp when |prev| started playing.
+// Pass an empty MPD::Song{} for |prev| on the very first song.
+void songChanged(const MPD::Song &prev,
+                 unsigned prev_start_time,
+                 bool     prev_threshold_met,
+                 const MPD::Song &next);
 
-	std::string escape(const std::string &s);
+// Called when MPD transitions to a stopped state so we can attempt to
+// scrobble the last song if the threshold was already met.
+void playerStopped(const MPD::Song &last,
+                   unsigned last_start_time,
+                   bool     last_threshold_met);
+
 }
 
-#endif // NCMPCPP_CURL_HANDLE_H
+#endif // NCMPCPP_SCROBBLER_H

@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <ctime>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 
@@ -36,6 +37,7 @@
 #include "screens/playlist_editor.h"
 #include "screens/search_engine.h"
 #include "screens/sel_items_adder.h"
+#include "scrobbler.h"
 #include "settings.h"
 #include "status.h"
 #include "statusbar.h"
@@ -78,6 +80,11 @@ unsigned m_playlist_version;
 unsigned m_playlist_length;
 unsigned m_total_time;
 int m_volume;
+
+// Scrobbler tracking state
+MPD::Song m_scrobble_song;           // song currently accumulating play time
+unsigned  m_scrobble_start_time = 0; // unix timestamp when it started playing
+bool      m_scrobble_threshold_met = false; // true once >=50% or >=4min played
 
 void drawTitle(const MPD::Song &np)
 {
@@ -140,6 +147,8 @@ void initialize_status()
 {
 	// get full info about new connection
 	Status::update(-1);
+
+	Scrobbler::initialize();
 
 	if (Config.jump_to_now_playing_song_at_start)
 	{
@@ -522,6 +531,11 @@ void Status::Changes::playerState()
 			break;
 		}
 		case MPD::psStop:
+			Scrobbler::playerStopped(m_scrobble_song, m_scrobble_start_time,
+			                         m_scrobble_threshold_met);
+			m_scrobble_song = MPD::Song{};
+			m_scrobble_start_time = 0;
+			m_scrobble_threshold_met = false;
 			windowTitle("ncmpcpp " VERSION);
 			if (Progressbar::isUnlocked())
 				Progressbar::draw(0, 0);
@@ -596,6 +610,14 @@ void Status::Changes::songID(int song_id)
 
 			drawTitle(s);
 
+			// Scrobble the previous song (if threshold met) and send now-playing
+			// for the incoming one.  Both HTTP calls happen in detached threads.
+			Scrobbler::songChanged(m_scrobble_song, m_scrobble_start_time,
+			                       m_scrobble_threshold_met, s);
+			m_scrobble_song           = s;
+			m_scrobble_start_time     = static_cast<unsigned>(std::time(nullptr));
+			m_scrobble_threshold_met  = false;
+
 			if (Config.autocenter_mode)
 				myPlaylist->locateSong(s);
 
@@ -627,6 +649,18 @@ void Status::Changes::elapsedTime(bool update_elapsed)
 		auto st = Mpd.getStatus();
 		m_elapsed_time = st.elapsedTime();
 		m_kbps = st.kbps();
+	}
+
+	// Check whether the current song has crossed the scrobble threshold:
+	// Last.fm requires >= 50% played OR >= 4 minutes, whichever comes first,
+	// and the song must be at least 30 seconds long.
+	if (Config.lastfm_scrobble
+	    && !m_scrobble_threshold_met
+	    && m_total_time >= 30)
+	{
+		unsigned threshold = std::min(m_total_time / 2u, 240u);
+		if (m_elapsed_time >= threshold)
+			m_scrobble_threshold_met = true;
 	}
 
 	std::string ps = playerStateToString(m_player_state);

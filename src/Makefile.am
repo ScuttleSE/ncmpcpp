@@ -46,6 +46,7 @@ ncmpcpp_SOURCES = \
 	mutable_song.cpp \
 	ncmpcpp.cpp \
 	settings.cpp \
+	scrobbler.cpp \
 	song.cpp \
 	song_list.cpp \
 	status.cpp \
@@ -118,6 +119,7 @@ noinst_HEADERS = \
 	regex_filter.h \
 	runnable_item.h \
 	settings.h \
+	scrobbler.h \
 	song.h \
 	song_list.h \
 	status.h \

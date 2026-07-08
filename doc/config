@@ -443,6 +443,20 @@
 ##
 #lastfm_preferred_language = en
 #
+## Last.fm scrobbling
+##
+## Set lastfm_scrobble to "yes" to enable automatic scrobbling and
+## now-playing notifications.  Requires a registered Last.fm API
+## application: set LASTFM_API_KEY and LASTFM_API_SECRET in scrobbler.cpp
+## and recompile.
+##
+## On first run with no cached session, ncmpcpp will print an authorization
+## URL to stderr.  Open it in a browser, click "Allow", and ncmpcpp will
+## automatically obtain and cache a session key in
+## ncmpcpp_directory/lastfm_session.  Subsequent runs use the cached key.
+##
+#lastfm_scrobble = no
+#
 #space_add_mode = add_remove
 #
 #show_hidden_files_in_local_browser = no

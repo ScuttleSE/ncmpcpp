@@ -81,6 +81,7 @@ struct Configuration
 	std::string execute_on_song_change;
 	std::string execute_on_player_state_change;
 	std::string lastfm_preferred_language;
+	bool        lastfm_scrobble;
 	std::wstring progressbar;
 	std::wstring visualizer_chars;
 	size_t visualizer_fps;
