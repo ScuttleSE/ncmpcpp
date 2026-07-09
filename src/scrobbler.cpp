@@ -355,14 +355,11 @@ bool authenticate()
 }
 
 // Ensure we have a valid session key.  Returns true if ready to scrobble.
+// Auth is only performed at startup via initialize() — never from background
+// threads to avoid multiple interactive auth prompts.
 bool ensureAuthenticated()
 {
-	if (!g_session_key.empty())
-		return true;
-	g_session_key = readSessionKey();
-	if (!g_session_key.empty())
-		return true;
-	return authenticate();
+	return !g_session_key.empty();
 }
 
 // Send track.updateNowPlaying.  Runs in a background thread.
