@@ -445,6 +445,11 @@ void Scrobbler::initialize()
 	if (!Config.lastfm_scrobble)
 		return;
 
+	static bool initialized = false;
+	if (initialized)
+		return;
+	initialized = true;
+
 	// Pre-load the session key from disk so that the first song change does
 	// not need to block on disk I/O or a network round-trip.
 	g_session_key = readSessionKey();
